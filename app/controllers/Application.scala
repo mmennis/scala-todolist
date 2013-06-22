@@ -2,11 +2,38 @@ package controllers
 
 import play.api._
 import play.api.mvc._
+import play.api.data._
+import play.api.data.Forms._
+import models.Task
+import play.Logger._
+import java.lang.ProcessBuilder.Redirect
 
 object Application extends Controller {
   
   def index = Action {
-    Ok(views.html.index("Your new application is ready."))
+    Redirect(routes.Application.tasks)
+  }
+
+  val taskForm = Form("label" -> nonEmptyText)
+
+  def tasks = Action {
+    debug("This is the tasks page being loaded ...")
+    Ok(views.html.index(Task.all, taskForm))
+  }
+
+  def newTask = Action { implicit request =>
+    taskForm.bindFromRequest.fold(
+      errors => BadRequest(views.html.index(Task.all, errors)),
+      label => {
+        Task.create(label)
+        Redirect(routes.Application.tasks)
+      }
+    )
+  }
+
+  def deleteTask(id: Long) = Action {
+    Task.delete(id)
+    Redirect(routes.Application.tasks)
   }
   
 }
